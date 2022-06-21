@@ -1,37 +1,43 @@
 import time
 import random
 import pygame
+import colorsys
 
 pygame.font.init()
 
-row = 20
-col = 10
+ROWS = 20
+COLS = 10
 block_size = 30
-w_width = 690
-w_height = 690
-pw_width = 300
-pw_height = 600
-pw_x_offset = 30
-pw_y_offset = 60
+W_WIDTH = 690
+W_HEIGHT = 690
+PW_WIDTH = 300
+PW_HEIGHT = 600
+PW_X_OFFSET = 30
+PW_Y_OFFSET = 60
 
-background = (255, 255, 255)
+COLOR_BACKGROUND = (255, 255, 255)
+
 
 # shapes
-s = [[(1, 0), (2, 0), (0, 1), (1, 1)], [(0, 0), (0, 1), (1, 1), (1, 2)]]
-z = [[(0, 0), (1, 0), (1, 1), (2, 1)], [(1, 0), (0, 1), (1, 1), (0, 2)]]
-t = [[(1, 1), (1, 0), (0, 1), (2, 1)], [(1, 1), (1, 0), (2, 1), (1, 2)], [(1, 1), (0, 1), (2, 1), (1, 2)],
+S = [[(1, 0), (2, 0), (0, 1), (1, 1)], [(0, 0), (0, 1), (1, 1), (1, 2)]]
+Z = [[(0, 0), (1, 0), (1, 1), (2, 1)], [(1, 0), (0, 1), (1, 1), (0, 2)]]
+T = [[(1, 1), (1, 0), (0, 1), (2, 1)], [(1, 1), (1, 0), (2, 1), (1, 2)], [(1, 1), (0, 1), (2, 1), (1, 2)],
      [(1, 1), (1, 0), (0, 1), (1, 2)]]
-j = [[(1, 1), (0, 0), (0, 1), (2, 1)], [(1, 1), (1, 0), (2, 0), (1, 2)], [(1, 1), (0, 1), (2, 1), (2, 2)],
+J = [[(1, 1), (0, 0), (0, 1), (2, 1)], [(1, 1), (1, 0), (2, 0), (1, 2)], [(1, 1), (0, 1), (2, 1), (2, 2)],
      [(1, 1), (1, 0), (0, 2), (1, 2)]]
-l = [[(1, 1), (2, 0), (0, 1), (2, 1)], [(1, 1), (1, 0), (2, 2), (1, 2)], [(1, 1), (0, 1), (2, 1), (0, 2)],
+L = [[(1, 1), (2, 0), (0, 1), (2, 1)], [(1, 1), (1, 0), (2, 2), (1, 2)], [(1, 1), (0, 1), (2, 1), (0, 2)],
      [(1, 1), (1, 0), (0, 0), (1, 2)]]
-i = [[(1, 0), (1, 1), (1, 2), (1, 3)], [(0, 1), (1, 1), (2, 1), (3, 1)]]
-o = [[(0, 0), (1, 0), (0, 1), (1, 1)]]
+I = [[(1, 0), (1, 1), (1, 2), (1, 3)], [(0, 1), (1, 1), (2, 1), (3, 1)]]
+O = [[(0, 0), (1, 0), (0, 1), (1, 1)]]
 
-shapes = [s, z, t, j, l, i, o]
+SHAPES = [S, Z, T, J, L, I, O]
+
+COLORS = [tuple(round(i * 255) for i in colorsys.hsv_to_rgb(x / 8, 1, 1)) for x in range(7)]
+print(COLORS)
+
 
 # Set up the drawing window
-screen = pygame.display.set_mode([w_width, w_height])
+screen = pygame.display.set_mode([W_WIDTH, W_HEIGHT])
 
 
 class Block:
@@ -60,9 +66,11 @@ class Shape:
     """
 
     def __init__(self):
-        self.shape_coords = shapes[random.randint(0, 6)]
+        self.shape = random.randint(0, 6)
+        self.shape_coords = SHAPES[self.shape]
+        self.color = COLORS[self.shape]
         self.x = 3
-        self.y = 0
+        self.y = -1
         self.rotation = 0
 
     def get_global_coords(self):
@@ -107,9 +115,9 @@ class Shape:
 
     def paint(self):
         for coord in self.shape_coords[self.rotation]:
-            pygame.draw.rect(screen, (0, 0, 255),
-                             (pw_x_offset + ((coord[0] + self.x) * block_size),
-                              pw_y_offset + ((coord[1] + self.y) * block_size), block_size, block_size), 0)
+            pygame.draw.rect(screen, self.color,
+                             (PW_X_OFFSET + ((coord[0] + self.x) * block_size),
+                              PW_Y_OFFSET + ((coord[1] + self.y) * block_size), block_size, block_size), 0)
 
 
 class FrozenBlocks:
@@ -156,7 +164,7 @@ class FrozenBlocks:
     def paint(self):
         for block in self.blocks:
             pygame.draw.rect(screen, block.color, (
-            block.x * block_size + pw_x_offset, block.y * block_size + pw_y_offset, block_size, block_size), 0)
+                block.x * block_size + PW_X_OFFSET, block.y * block_size + PW_Y_OFFSET, block_size, block_size), 0)
 
 
 class Tetris:
@@ -164,12 +172,7 @@ class Tetris:
 
     """
 
-    def __init__(self, pw_width, pw_height, pw_x_offset, pw_y_offset):
-        self.pw_width = pw_width
-        self.pw_height = pw_height
-        self.pw_x_offset = pw_x_offset
-        self.pw_y_offset = pw_y_offset
-
+    def __init__(self):
         self.frozen_blocks = FrozenBlocks()
         self.game_lost = False
         self.last_instance = time.time()
@@ -181,14 +184,15 @@ class Tetris:
 
     def draw_outline(self):
         pygame.draw.lines(screen, (0, 0, 0), True, (
-            (self.pw_x_offset, self.pw_y_offset), (self.pw_x_offset, self.pw_y_offset + self.pw_height),
-            (self.pw_x_offset + self.pw_width, self.pw_y_offset + self.pw_height),
-            (self.pw_x_offset + self.pw_width, self.pw_y_offset)), 1)
+            (PW_X_OFFSET, PW_Y_OFFSET), (PW_X_OFFSET, PW_Y_OFFSET + PW_HEIGHT),
+            (PW_X_OFFSET + PW_WIDTH, PW_Y_OFFSET + PW_HEIGHT),
+            (PW_X_OFFSET + PW_WIDTH, PW_Y_OFFSET)), 1)
 
-    def is_game_lost(self, shape_coords):
-        for block in shape_coords:
-            if block[1] < 0:
-                return True
+
+    def check_game_lost(self, shape_coords):
+        for coord in shape_coords:
+            if coord[1] < 2:
+                self.game_lost = True
 
     def will_collide(self, shape, frozen_blocks, move):
         # move - 0 left, 1 right, 2 down, 3 rotate, 4 rotate shift right, 5 rotate shift left, 6 rotate shift 2left
@@ -208,7 +212,7 @@ class Tetris:
             self.coords_to_check = shape.get_rotated_shifted_2left_values()
 
         for coord in self.coords_to_check:
-            if coord in frozen_blocks.get_blocks_coords() or coord[0] >= col or coord[0] < 0 or coord[1] >= row:
+            if coord in frozen_blocks.get_blocks_coords() or coord[0] >= COLS or coord[0] < 0 or coord[1] >= ROWS:
                 return True
         return False
 
@@ -234,7 +238,8 @@ class Tetris:
         if not self.will_collide(shape, frozen_blocks, 2):
             shape.descend()
         else:
-            frozen_blocks.create_blocks(shape.get_global_coords(), (255, 0, 0))
+            self.check_game_lost(shape.get_global_coords())
+            frozen_blocks.create_blocks(shape.get_global_coords(), shape.color)
             frozen_blocks.clear_rows([xy[1] for xy in shape.get_global_coords()])
             self.need_new_shape = True
 
@@ -279,8 +284,9 @@ class Tetris:
             pygame.display.flip()
 
 
+
 # Run until the user asks to quit
-tetris = Tetris(pw_width, pw_height, pw_x_offset, pw_y_offset)
+tetris = Tetris()
 tetris.run_game()
 
 pygame.quit()
