@@ -17,7 +17,6 @@ PW_Y_OFFSET = 60
 
 COLOR_BACKGROUND = (255, 255, 255)
 
-
 # shapes
 S = [[(1, 0), (2, 0), (0, 1), (1, 1)], [(0, 0), (0, 1), (1, 1), (1, 2)]]
 Z = [[(0, 0), (1, 0), (1, 1), (2, 1)], [(1, 0), (0, 1), (1, 1), (0, 2)]]
@@ -53,6 +52,9 @@ class Block:
     def get_xy(self):
         return self.x, self.y
 
+    def get_x(self):
+        return self.x
+
     def get_y(self):
         return self.y
 
@@ -67,6 +69,7 @@ class Shape:
 
     def __init__(self):
         self.shape = random.randint(0, 6)
+        self.shape = 5
         self.shape_coords = SHAPES[self.shape]
         self.color = COLORS[self.shape]
         self.x = 3
@@ -150,16 +153,29 @@ class FrozenBlocks:
         return rows_to_clear
 
     def clear_rows(self, rows_to_check):
-        for row in self.get_rows_to_clear(rows_to_check):
-            i = 0
-            while i < len(self.blocks):
-                if self.blocks[i].get_y() == row:
-                    del self.blocks[i]
-                else:
-                    if self.blocks[i].get_y() < row:
-                        self.blocks[i].descend()
-                    i += 1
+        rows_to_check = self.get_rows_to_clear(rows_to_check)
+        if rows_to_check:
+            for x in range(5):
+            # for row in self.get_rows_to_clear(rows_to_check):
+                i = 0
+                while i < len(self.blocks):
+                    if self.blocks[i].get_y() in rows_to_check and (self.blocks[i].get_x() == 4 - x or self.blocks[i].get_x() == 5 + x):
+                        del self.blocks[i]
+                    else:
+                        i += 1
+                self.clear_pw()
+                self.paint()
+                pygame.display.flip()
+                time.sleep(0.1)
+            rows_to_check.sort()
+            for row in rows_to_check:
+                for block in self.blocks:
+                    if block.get_y() < row:
+                        block.descend()
 
+
+    def clear_pw(self):
+        pygame.draw.rect(screen, (255, 255, 255), (PW_X_OFFSET + 1, PW_Y_OFFSET + 1, PW_WIDTH - 1, PW_HEIGHT - 1), 0)
 
     def paint(self):
         for block in self.blocks:
@@ -176,7 +192,7 @@ class Tetris:
         self.frozen_blocks = FrozenBlocks()
         self.game_lost = False
         self.last_instance = time.time()
-        self.fall_time = 0.1
+        self.fall_time = 0.5
         self.coords_to_check = []
         self.need_new_shape = True
         self.grace_period_start = 0.0
