@@ -34,8 +34,11 @@ O = [[(0, 0), (1, 0), (0, 1), (1, 1)]]
 
 SHAPES = [S, Z, T, J, L, I, O]
 
-COLORS = [tuple(round(i * 255) for i in colorsys.hsv_to_rgb(x / 8, 1, 1)) for x in range(7)]
+colors = [tuple(round(i * 255) for i in colorsys.hsv_to_rgb(x / 8, 1, 1)) for x in range(7)]
 
+def change_colors():
+    for i in range(len(colors)):
+        colors[i] = (random.randint(10, 255), random.randint(10, 255), random.randint(10, 255))
 
 # Set up the drawing window
 screen = pygame.display.set_mode([W_WIDTH, W_HEIGHT])
@@ -67,20 +70,22 @@ class Block:
         self.y += 1
 
 
-
-
 class Shape:
     """
 
     """
 
-    def __init__(self):
-        self.shape = random.randint(0, 6)
+    def __init__(self, type):
+        self.shape = type
         self.shape_coords = SHAPES[self.shape]
-        self.color = COLORS[self.shape]
+        self.color = self.shape
+        self.x = 11
+        self.y = 5
+        self.rotation = 0
+
+    def move_to_pw(self):
         self.x = 3
         self.y = 0
-        self.rotation = 0
 
     def get_global_coords(self):
         return [(self.x + coord[0], self.y + coord[1]) for coord in self.shape_coords[self.rotation]]
@@ -124,16 +129,16 @@ class Shape:
 
     def paint(self):
         for coord in self.shape_coords[self.rotation]:
-            pygame.draw.rect(screen, self.color,
+            pygame.draw.rect(screen, colors[self.color],
                              (PW_X_OFFSET + ((coord[0] + self.x) * block_size),
                               PW_Y_OFFSET + ((coord[1] + self.y) * block_size), block_size, block_size), 0)
 
     def paint_ghost(self, drop):
         for coord in self.shape_coords[self.rotation]:
-            pygame.draw.lines(screen, self.color, True, (
+            pygame.draw.lines(screen, colors[self.color], True, (
                 ((PW_X_OFFSET + ((coord[0] + self.x) * block_size)), (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size))),
                 ((PW_X_OFFSET + ((coord[0] + self.x) * block_size) + block_size), (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size))),
-                ((PW_X_OFFSET + ((coord[0] + self.x) * block_size) + block_size), (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size) + block_size)),
+                ((PW_X_OFFSET + ((coord[0] + self.x) * block_size) + block_size), (PW_Y_OFFSET + ((coord[1] + self.y + drop ) * block_size) + block_size)),
                 ((PW_X_OFFSET + ((coord[0] + self.x) * block_size)), (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size) + block_size))
                 ), 2)
 
@@ -189,16 +194,13 @@ class FrozenBlocks:
                         block.descend()
         return len(rows_to_clear)
 
-    def change_colors(self):
-        pass
-
 
     def clear_pw(self):
         pygame.draw.rect(screen, (255, 255, 255), (PW_X_OFFSET + 1, PW_Y_OFFSET + 1, PW_WIDTH - 1, PW_HEIGHT - 1), 0)
 
     def paint(self):
         for block in self.blocks:
-            pygame.draw.rect(screen, block.color, (
+            pygame.draw.rect(screen, colors[block.color], (
                 block.x * block_size + PW_X_OFFSET, block.y * block_size + PW_Y_OFFSET, block_size, block_size), 0)
 
 
@@ -221,7 +223,10 @@ class Tetris:
         self.level = 1
         self.rows_cleared_total = 0
         self.rows_cleared = 0
-        self.rows_to_level_up = 8
+        self.rows_to_level_up = 2
+        self.next_piece = Shape(random.randint(0, 6))
+        self.exclusion_list = [None, None]
+        self.drought_counter = 0
 
     def draw_outline(self):
         pygame.draw.lines(screen, (0, 0, 0), True, (
@@ -296,24 +301,43 @@ class Tetris:
             self.level_up()
             self.rows_cleared = 0
 
-    def print_score(self):
+    def print_side(self):
         score = font.render("score: " + str(self.score_value), True, (0, 0, 0))
         screen.blit(score, (TEXT_X_OFFSET, TEXT_Y_OFFSET))
         level = font.render("level: " + str(self.level), True, (0, 0, 0))
         screen.blit(level, (TEXT_X_OFFSET, TEXT_Y_OFFSET + FONT_SIZE))
         rows = font.render("rows cleared: " + str(self.rows_cleared_total), True, (0, 0, 0))
         screen.blit(rows, (TEXT_X_OFFSET, TEXT_Y_OFFSET + 2 * FONT_SIZE))
+        label = font.render("next piece: ", True, (0, 0, 0))
+        screen.blit(label, (TEXT_X_OFFSET, TEXT_Y_OFFSET + 3 * FONT_SIZE))
 
     def level_up(self):
         self.fall_time *= self.time_multiplier
         self.level += 1
-        frozen_blocks.change_colors()
+        change_colors()
+
+    def choose_new_shape(self):
+        new_shape = random.choice([i for i in range(0, 6) if i not in self.exclusion_list])
+        self.exclusion_list.append(new_shape)
+        self.exclusion_list.pop(0)
+        if new_shape != 5:
+            self.drought_counter += 1
+            if self.drought_counter > 4:
+                self.drought_counter = 0
+                return 5
+        else:
+            self.drought_counter = 0
+        return new_shape
+
 
 
     def run_game(self):
+        frozen_blocks = FrozenBlocks()
         while not self.game_lost:
             if self.need_new_shape:
-                shape = Shape()
+                shape = self.next_piece
+                shape.move_to_pw()
+                self.next_piece = Shape(self.choose_new_shape())
                 self.need_new_shape = False
 
             screen.fill((255, 255, 255))
@@ -327,6 +351,7 @@ class Tetris:
                 for coord in self.coords_to_check:
                     if coord in frozen_blocks.get_blocks_coords() or coord[0] >= COLS or coord[0] < 0 or coord[1] >= ROWS:
                         outline_collide = True
+            self.next_piece.paint()
             shape.paint_ghost(drop - 1)
             shape.paint()
             self.draw_outline()
@@ -358,14 +383,13 @@ class Tetris:
                     if event.key == pygame.K_SPACE:
                         shape.descend(drop - 1)
                         self.descend_shape(shape, frozen_blocks)
-            self.print_score()
+            self.print_side()
 
             pygame.display.update()
 
 
 # Run until the user asks to q uit
 tetris = Tetris()
-frozen_blocks = FrozenBlocks()
 tetris.run_game()
 
 pygame.quit()
