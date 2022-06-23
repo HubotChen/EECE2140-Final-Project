@@ -34,21 +34,14 @@ O = [[(0, 0), (1, 0), (0, 1), (1, 1)]]
 
 SHAPES = [S, Z, T, J, L, I, O]
 
-colors = [tuple(round(i * 255) for i in colorsys.hsv_to_rgb(x / 8, 1, 1)) for x in range(7)]
-
-def change_colors():
-    for i in range(len(colors)):
-        colors[i] = (random.randint(10, 255), random.randint(10, 255), random.randint(10, 255))
-
 # Set up the drawing window
 screen = pygame.display.set_mode([W_WIDTH, W_HEIGHT])
 pygame.display.set_caption('Tetris')
 font = pygame.font.Font(pygame.font.get_default_font(), FONT_SIZE)
 
 
-
 class Block:
-    """
+    """ Block class contains a block object which is used by the frozen blocks class to store coordinates and colors
 
     """
 
@@ -71,7 +64,9 @@ class Block:
 
 
 class Shape:
-    """
+    """ Shape class, contains the coordinates of a shape and its color. Contains methods to get its potential
+        coordinates after different moves in order to check for collision. Contains methods to paint a descended
+        ghost.
 
     """
 
@@ -93,15 +88,15 @@ class Shape:
     def get_descended_values(self, drop):
         return [(self.x + coord[0], self.y + coord[1] + drop) for coord in self.shape_coords[self.rotation]]
 
-    def get_rotated_values(self):
-        return [(self.x + coord[0], self.y + coord[1]) for coord in
-                self.shape_coords[(self.rotation + 1) % len(self.shape_coords)]]
-
     def get_shifted_left_values(self):
         return [(self.x + coord[0] - 1, self.y + coord[1]) for coord in self.shape_coords[self.rotation]]
 
     def get_shifted_right_values(self):
         return [(self.x + coord[0] + 1, self.y + coord[1]) for coord in self.shape_coords[self.rotation]]
+
+    def get_rotated_values(self):
+        return [(self.x + coord[0], self.y + coord[1]) for coord in
+                self.shape_coords[(self.rotation + 1) % len(self.shape_coords)]]
 
     def get_rotated_shifted_right_values(self):
         return [(self.x + coord[0] + 1, self.y + coord[1]) for coord in
@@ -136,15 +131,19 @@ class Shape:
     def paint_ghost(self, drop):
         for coord in self.shape_coords[self.rotation]:
             pygame.draw.lines(screen, colors[self.color], True, (
-                ((PW_X_OFFSET + ((coord[0] + self.x) * block_size)), (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size))),
-                ((PW_X_OFFSET + ((coord[0] + self.x) * block_size) + block_size), (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size))),
-                ((PW_X_OFFSET + ((coord[0] + self.x) * block_size) + block_size), (PW_Y_OFFSET + ((coord[1] + self.y + drop ) * block_size) + block_size)),
-                ((PW_X_OFFSET + ((coord[0] + self.x) * block_size)), (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size) + block_size))
-                ), 2)
+                ((PW_X_OFFSET + ((coord[0] + self.x) * block_size)),
+                 (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size))),
+                ((PW_X_OFFSET + ((coord[0] + self.x) * block_size) + block_size),
+                 (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size))),
+                ((PW_X_OFFSET + ((coord[0] + self.x) * block_size) + block_size),
+                 (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size) + block_size)),
+                ((PW_X_OFFSET + ((coord[0] + self.x) * block_size)),
+                 (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size) + block_size))
+            ), 2)
 
 
 class FrozenBlocks:
-    """
+    """ Contains all the logic for the frozen blocks and the bottom of the tetris game. Contains a list of Block objects
 
     """
 
@@ -176,10 +175,11 @@ class FrozenBlocks:
         rows_to_clear = self.get_rows_to_clear()
         if rows_to_clear:
             for x in range(5):
-            # for row in self.get_rows_to_clear(rows_to_check):
+                # for row in self.get_rows_to_clear(rows_to_check):
                 i = 0
                 while i < len(self.blocks):
-                    if self.blocks[i].get_y() in rows_to_clear and (self.blocks[i].get_x() == 4 - x or self.blocks[i].get_x() == 5 + x):
+                    if self.blocks[i].get_y() in rows_to_clear and (
+                            self.blocks[i].get_x() == 4 - x or self.blocks[i].get_x() == 5 + x):
                         del self.blocks[i]
                     else:
                         i += 1
@@ -194,7 +194,6 @@ class FrozenBlocks:
                         block.descend()
         return len(rows_to_clear)
 
-
     def clear_pw(self):
         pygame.draw.rect(screen, (255, 255, 255), (PW_X_OFFSET + 1, PW_Y_OFFSET + 1, PW_WIDTH - 1, PW_HEIGHT - 1), 0)
 
@@ -205,8 +204,8 @@ class FrozenBlocks:
 
 
 class Tetris:
-    """
-
+    """ Contains all the high level logic for running the tetris game. Holds 3 other classes, Shape, Frozen blocks,
+        and Blocks.
     """
 
     def __init__(self):
@@ -233,7 +232,6 @@ class Tetris:
             (PW_X_OFFSET, PW_Y_OFFSET), (PW_X_OFFSET, PW_Y_OFFSET + PW_HEIGHT),
             (PW_X_OFFSET + PW_WIDTH, PW_Y_OFFSET + PW_HEIGHT),
             (PW_X_OFFSET + PW_WIDTH, PW_Y_OFFSET)), 1)
-
 
     def check_game_lost(self, shape_coords):
         for coord in shape_coords:
@@ -293,7 +291,7 @@ class Tetris:
     def update_score(self, new_rows_cleared):
         self.rows_cleared_total += new_rows_cleared
         self.rows_cleared += new_rows_cleared
-        if new_rows_cleared == 4 :
+        if new_rows_cleared == 4:
             self.score_value += 500
         else:
             self.score_value += 100 * new_rows_cleared
@@ -331,8 +329,10 @@ class Tetris:
             self.drought_counter = 0
         return new_shape
 
-
     def run_game(self):
+        """ logic for running the tetris game
+            :return: None
+        """
         frozen_blocks = FrozenBlocks()
         while not self.game_lost:
             if self.need_new_shape:
@@ -350,7 +350,8 @@ class Tetris:
                 drop += 1
                 self.coords_to_check = shape.get_descended_values(drop)
                 for coord in self.coords_to_check:
-                    if coord in frozen_blocks.get_blocks_coords() or coord[0] >= COLS or coord[0] < 0 or coord[1] >= ROWS:
+                    if coord in frozen_blocks.get_blocks_coords() or coord[0] >= COLS or coord[0] < 0 or coord[
+                        1] >= ROWS:
                         outline_collide = True
             self.next_piece.paint()
             shape.paint_ghost(drop - 1)
@@ -389,12 +390,14 @@ class Tetris:
             pygame.display.update()
 
 
-width = screen.get_width()
-height = screen.get_height()
 button1_outline = (290, 90, 100, 50)
 button2_outline = (290, 190, 100, 50)
 
+
 def paint_start_menu():
+    """ function to paint the menu screen
+        :return: None
+    """
     screen.fill((255, 255, 255))
     pygame.draw.rect(screen, (200, 200, 200), button1_outline, 0)
     pygame.draw.rect(screen, (200, 200, 200), button2_outline, 0)
@@ -404,17 +407,37 @@ def paint_start_menu():
     screen.blit(exit, (300, 200))
     pygame.display.update()
 
-while True:
-    mouse = pygame.mouse.get_pos()
-    paint_start_menu()
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if 0 <= mouse[0] - button1_outline[0] <= button1_outline[2] and 0 <= mouse[1] - button1_outline[1] <= button1_outline[3]:
-                tetris = Tetris()
-                tetris.run_game()
-            if 0 <= mouse[0] - button2_outline[0] <= button2_outline[2] and 0 <= mouse[1] - button2_outline[1] <= button2_outline[3]:
+
+colors = [tuple(round(i * 255) for i in colorsys.hsv_to_rgb(x / 8, 1, 1)) for x in range(7)]
+
+
+def change_colors():
+    """ function that randomizes all of the colors. Used during level ups.
+        :return: None
+    """
+    for i in range(len(colors)):
+        colors[i] = (random.randint(10, 255), random.randint(10, 255), random.randint(10, 255))
+
+
+def main():
+    """ main function that contains the logic for the menu screen
+        :return:
+    """
+    while True:
+        mouse = pygame.mouse.get_pos()
+        paint_start_menu()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if 0 <= mouse[0] - button1_outline[0] <= button1_outline[2] and 0 <= mouse[1] - button1_outline[1] <= \
+                        button1_outline[3]:
+                    tetris = Tetris()
+                    tetris.run_game()
+                if 0 <= mouse[0] - button2_outline[0] <= button2_outline[2] and 0 <= mouse[1] - button2_outline[1] <= \
+                        button2_outline[3]:
+                    pygame.quit()
 
 
+if __name__ == "__main__":
+    main()
