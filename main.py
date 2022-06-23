@@ -293,7 +293,7 @@ class Tetris:
     def update_score(self, new_rows_cleared):
         self.rows_cleared_total += new_rows_cleared
         self.rows_cleared += new_rows_cleared
-        if new_rows_cleared == 5:
+        if new_rows_cleared == 4 :
             self.score_value += 500
         else:
             self.score_value += 100 * new_rows_cleared
@@ -322,13 +322,14 @@ class Tetris:
         self.exclusion_list.pop(0)
         if new_shape != 5:
             self.drought_counter += 1
-            if self.drought_counter > 4:
+            if self.drought_counter > 7:
+                self.exclusion_list.append(5)
+                self.exclusion_list.pop(0)
                 self.drought_counter = 0
                 return 5
         else:
             self.drought_counter = 0
         return new_shape
-
 
 
     def run_game(self):
@@ -368,7 +369,7 @@ class Tetris:
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.game_lost = True
+                    pygame.quit()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_DOWN:
                         self.descend_shape(shape, frozen_blocks)
@@ -388,8 +389,32 @@ class Tetris:
             pygame.display.update()
 
 
-# Run until the user asks to q uit
-tetris = Tetris()
-tetris.run_game()
+width = screen.get_width()
+height = screen.get_height()
+button1_outline = (290, 90, 100, 50)
+button2_outline = (290, 190, 100, 50)
 
-pygame.quit()
+def paint_start_menu():
+    screen.fill((255, 255, 255))
+    pygame.draw.rect(screen, (200, 200, 200), button1_outline, 0)
+    pygame.draw.rect(screen, (200, 200, 200), button2_outline, 0)
+    start = font.render("Start", True, (0, 0, 0))
+    screen.blit(start, (300, 100))
+    exit = font.render("Exit", True, (0, 0, 0))
+    screen.blit(exit, (300, 200))
+    pygame.display.update()
+
+while True:
+    mouse = pygame.mouse.get_pos()
+    paint_start_menu()
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if 0 <= mouse[0] - button1_outline[0] <= button1_outline[2] and 0 <= mouse[1] - button1_outline[1] <= button1_outline[3]:
+                tetris = Tetris()
+                tetris.run_game()
+            if 0 <= mouse[0] - button2_outline[0] <= button2_outline[2] and 0 <= mouse[1] - button2_outline[1] <= button2_outline[3]:
+                pygame.quit()
+
+
