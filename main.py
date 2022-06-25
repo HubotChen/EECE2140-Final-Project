@@ -7,7 +7,7 @@ pygame.font.init()
 
 ROWS = 20
 COLS = 10
-block_size = 30
+BLOCK_SIZE = 30
 W_WIDTH = 690
 W_HEIGHT = 690
 PW_WIDTH = 300
@@ -74,7 +74,7 @@ class Block:
         return self.y
 
     def descend(self):
-        """ adds 1 to the y coordinate
+        """ adds 1 to the y coordinate, lowering the block on the screen
         :return: None
         """
         self.y += 1
@@ -189,8 +189,8 @@ class Shape:
         """
         for coord in self.shape_coords[self.rotation]:
             pygame.draw.rect(screen, colors[self.color],
-                             (PW_X_OFFSET + ((coord[0] + self.x) * block_size),
-                              PW_Y_OFFSET + ((coord[1] + self.y) * block_size), block_size, block_size), 0)
+                             (PW_X_OFFSET + ((coord[0] + self.x) * BLOCK_SIZE),
+                              PW_Y_OFFSET + ((coord[1] + self.y) * BLOCK_SIZE), BLOCK_SIZE, BLOCK_SIZE), 0)
 
     def paint_ghost(self, drop):
         """ Uses the pygame draw.lines function to draw the ghost of shape drop units below
@@ -199,14 +199,14 @@ class Shape:
         """
         for coord in self.shape_coords[self.rotation]:
             pygame.draw.lines(screen, colors[self.color], True, (
-                ((PW_X_OFFSET + ((coord[0] + self.x) * block_size)),
-                 (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size))),
-                ((PW_X_OFFSET + ((coord[0] + self.x) * block_size) + block_size),
-                 (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size))),
-                ((PW_X_OFFSET + ((coord[0] + self.x) * block_size) + block_size),
-                 (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size) + block_size)),
-                ((PW_X_OFFSET + ((coord[0] + self.x) * block_size)),
-                 (PW_Y_OFFSET + ((coord[1] + self.y + drop) * block_size) + block_size))
+                ((PW_X_OFFSET + ((coord[0] + self.x) * BLOCK_SIZE)),
+                 (PW_Y_OFFSET + ((coord[1] + self.y + drop) * BLOCK_SIZE))),
+                ((PW_X_OFFSET + ((coord[0] + self.x) * BLOCK_SIZE) + BLOCK_SIZE),
+                 (PW_Y_OFFSET + ((coord[1] + self.y + drop) * BLOCK_SIZE))),
+                ((PW_X_OFFSET + ((coord[0] + self.x) * BLOCK_SIZE) + BLOCK_SIZE),
+                 (PW_Y_OFFSET + ((coord[1] + self.y + drop) * BLOCK_SIZE) + BLOCK_SIZE)),
+                ((PW_X_OFFSET + ((coord[0] + self.x) * BLOCK_SIZE)),
+                 (PW_Y_OFFSET + ((coord[1] + self.y + drop) * BLOCK_SIZE) + BLOCK_SIZE))
             ), 2)
 
 
@@ -291,7 +291,7 @@ class FrozenBlocks:
         """
         for block in self.blocks:
             pygame.draw.rect(screen, colors[block.color], (
-                block.x * block_size + PW_X_OFFSET, block.y * block_size + PW_Y_OFFSET, block_size, block_size), 0)
+                block.x * BLOCK_SIZE + PW_X_OFFSET, block.y * BLOCK_SIZE + PW_Y_OFFSET, BLOCK_SIZE, BLOCK_SIZE), 0)
 
 
 class Tetris:
@@ -302,7 +302,6 @@ class Tetris:
     def __init__(self):
         """ default constructor for the tetris class
         """
-        self.frozen_blocks = FrozenBlocks()
         self.game_lost = False
         self.last_instance = time.time()
         self.fall_time = 0.5
@@ -463,7 +462,7 @@ class Tetris:
         return new_shape
 
     def run_game(self):
-        """ logic for running the tetris game
+        """ All the logic for running the tetris game
             :return: None
         """
         frozen_blocks = FrozenBlocks()
